@@ -1,41 +1,57 @@
 package ec.edu.puce.githubclient.ui.screens
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ec.edu.puce.githubclient.ui.components.RepoItem
+import ec.edu.puce.githubclient.viewmodels.RepoListViewModel
 
 @Composable
 fun RepoList(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: RepoListViewModel = viewModel ()
 ) {
-    Column (
-        modifier= modifier
-    ){
-        RepoItem(
-            name = "Repositorio de Android ",
-            description = "Repositorio creado en kotlin",
-            avatarUrl = "https://wallpapers-clan.com/wp-content/uploads/2026/02/lofi-datsun-240z-palm-trees-retro-sunset-desktop-wallpaper-cover.jpg",
-            language = "Kotlin"
-        )
-        RepoItem(
-            name = "Repositorio de Django ",
-            description = "Repositorio creado en Python",
-            avatarUrl = "https://i.pinimg.com/736x/f6/99/3f/f6993fdb31af9cb04fcafb3f6e2fb105.jpg",
-            language = "Python"
-        )
-        RepoItem(
-            name = "Repositorio de IOs",
-            description = "Repositorio creado en IOs",
-            avatarUrl = "https://r1.ilikewallpaper.net/iphone-wallpapers/download/77636/Maldives-iphone-wallpaper-ilikewallpaper_com_640.jpg",
-            language = "IOS"
-        )
-        RepoItem(
-            name = "Repositorio de React",
-            description = "Repositorio creado en React",
-            avatarUrl = "https://i.pinimg.com/222x/9f/68/10/9f6810ef623c73253330a62eb287c1e0.jpg",
-            language = "React"
-        )
+    val repos by viewModel.repos.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errMsg by viewModel.errMsg.collectAsState()
 
+    Box (
+        modifier= modifier
+    ) {
+      if (isLoading) {
+          CircularProgressIndicator(
+              modifier = Modifier.align(Alignment.Center)
+          )
+      }
+
+      errMsg?.let {
+          Text(
+              text = it,
+              color = MaterialTheme.colorScheme.error,
+              modifier = Modifier
+                  .align(Alignment.Center)
+                  .padding(all = 16.dp)
+          )
+      }
+        if (!isLoading && errMsg != null) {
+            LazyColumn (
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(count = repos.size) { i ->
+                    RepoItem(repository = repos[i])
+                }
+            }
+        }
+      }
     }
 }
