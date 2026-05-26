@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ec.edu.puce.githubclient.ui.components.RepoItem
 import ec.edu.puce.githubclient.viewmodels.RepoListViewModel
+import androidx.compose.material3.Text
 
 @Composable
 fun RepoList(
@@ -43,7 +44,7 @@ fun RepoList(
                   .padding(all = 16.dp)
           )
       }
-        if (!isLoading && errMsg != null) {
+        if (!isLoading && errMsg == null) {
             LazyColumn (
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -54,4 +55,4 @@ fun RepoList(
         }
       }
     }
-}
+
