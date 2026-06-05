@@ -19,30 +19,51 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             GithubClientTheme {
-                    var currentScreen by remember { mutableStateOf(value = "repoList") }
-                    val listViewModel: RepoListViewModel = viewModel()
-                    val formViewModel: RepoFormViewModel = viewModel()
+                var currentScreen by remember { mutableStateOf("repoList") }
 
-                    when (currentScreen) {
-                        "repoList" -> RepoList (
-                            onNavigateToForm = { currentScreen = "repoForm" }
-                        )
-                        "repoForm" -> RepoForm(
-                            onBackClick = {
-                                formViewModel.resetError()
-                                currentScreen = "repoList"
-                                          },
-                            onSaveSuccess = {
-                                listViewModel.fetchRepos()
-                                currentScreen = "repoList"
-                            }
+                var editOwner by remember { mutableStateOf<String?>(null) }
+                var editRepoName by remember { mutableStateOf<String?>(null) }
+                var editDescription by remember { mutableStateOf<String?>(null) }
 
-                        )
-                    }
+                val listViewModel: RepoListViewModel = viewModel()
+                val formViewModel: RepoFormViewModel = viewModel()
+
+                when (currentScreen) {
+                    "repoList" -> RepoList(
+                        viewModel = listViewModel,
+                        onNavigateToForm = {
+                            editOwner = null
+                            editRepoName = null
+                            editDescription = null
+                            currentScreen = "repoForm"
+                        },
+                        onNavigateToEdit = { owner, repoName, description ->
+                            editOwner = owner
+                            editRepoName = repoName
+                            editDescription = description
+                            currentScreen = "repoForm"
+                        }
+                    )
+
+                    "repoForm" -> RepoForm(
+                        viewModel = formViewModel,
+                        owner = editOwner,
+                        oldRepoName = editRepoName,
+                        initialDescription = editDescription,
+                        onBackClick = {
+                            formViewModel.resetError()
+                            currentScreen = "repoList"
+                        },
+                        onSaveSuccess = {
+                            listViewModel.fetchRepos()
+                            currentScreen = "repoList"
+                        }
+                    )
+                }
             }
         }
     }
 }
-

@@ -2,21 +2,21 @@ package ec.edu.puce.githubclient.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.materialIcon
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -32,59 +32,69 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImagePainter
 import ec.edu.puce.githubclient.ui.theme.GithubClientTheme
 import ec.edu.puce.githubclient.viewmodels.RepoFormViewModel
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepoForm(
     onBackClick: () -> Unit = {},
     onSaveSuccess: () -> Unit = {},
-    viewModel: RepoFormViewModel = viewModel ()
+    viewModel: RepoFormViewModel = viewModel(),
+    owner: String? = null,
+    oldRepoName: String? = null,
+    initialDescription: String? = null,
+    initialPrivate: Boolean = false
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
     val isSuccess by viewModel.isSuccess.collectAsState()
     val errMsg by viewModel.errMsg.collectAsState()
 
-    var name by remember { mutableStateOf(value = "") }
-    var description by remember { mutableStateOf(value = "") }
+    val isEditMode = !owner.isNullOrBlank() && !oldRepoName.isNullOrBlank()
+
+    var name by remember { mutableStateOf(oldRepoName ?: "") }
+    var description by remember { mutableStateOf(initialDescription ?: "") }
+    var isPrivate by remember { mutableStateOf(initialPrivate) }
 
     LaunchedEffect(key1 = isSuccess) {
-        if(isSuccess) {
+        if (isSuccess) {
             onSaveSuccess()
             viewModel.resetSuccess()
         }
     }
 
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Formulario as repositorio") },
-            navigationIcon = {
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Regresar",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                title = {
+                    Text(
+                        text = if (isEditMode) {
+                            "Editar repositorio"
+                        } else {
+                            "Crear repositorio"
+                        }
                     )
-                }
-            },
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Regresar",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
         }
-
     ) { innerPadding ->
-        Column (
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(paddingValues = innerPadding)
@@ -99,21 +109,36 @@ fun RepoForm(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text(text = "nombre del repositorio") },
+                    label = { Text(text = "Nombre del repositorio") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-                Spacer(modifier = Modifier.height(height = 12.dp))
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text(text = "descripcion del repositorio") },
+                    label = { Text(text = "Descripción del repositorio") },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 5
                 )
 
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = isPrivate,
+                        onCheckedChange = { isPrivate = it }
+                    )
+
+                    Text(text = "Repositorio privado")
+                }
+
                 if (!errMsg.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(height = 48.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     Text(
                         text = errMsg!!,
                         color = MaterialTheme.colorScheme.error,
@@ -121,18 +146,40 @@ fun RepoForm(
                     )
                 }
 
+                Spacer(modifier = Modifier.height(48.dp))
 
-                Spacer(modifier = Modifier.height(height = 48.dp))
                 Button(
-                    onClick = { viewModel.createRepository(name, description) },
+                    onClick = {
+                        if (isEditMode) {
+                            viewModel.updateRepository(
+                                owner = owner,
+                                oldRepoName = oldRepoName,
+                                newName = name,
+                                description = description,
+                            )
+                        } else {
+                            viewModel.createRepository(
+                                name = name,
+                                description = description,
+                            )
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Send,
+                        imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Guardar"
                     )
-                    Spacer(modifier = Modifier.width(width = 8.dp))
-                    Text(text = "Guardar")
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = if (isEditMode) {
+                            "Actualizar"
+                        } else {
+                            "Guardar"
+                        }
+                    )
                 }
             }
         }
@@ -142,7 +189,7 @@ fun RepoForm(
 @Preview(showBackground = true)
 @Composable
 fun RepoFormPreview() {
-    GithubClientTheme () {
+    GithubClientTheme {
         RepoForm()
     }
 }
